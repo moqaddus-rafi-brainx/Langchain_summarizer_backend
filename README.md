@@ -56,14 +56,9 @@ npm start
 ### Base URL: `http://localhost:3000`
 
 ### Upload & Processing Endpoints
-- **POST** `/api/upload/upload` - Upload a document to temporary storage
 - **POST** `/api/upload/load-document` - Upload and process document with summarization
 - **POST** `/api/upload/save-summary` - Handle human approval and save to database
-- **GET** `/api/upload` - Get upload service status and supported file types
 
-### Health Endpoints
-- **GET** `/api/health` - Basic health check
-- **GET** `/api/health/detailed` - Detailed system health information
 
 ## Workflow
 
@@ -173,7 +168,6 @@ The application uses LangGraph to orchestrate a multi-step workflow:
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `PORT` | Server port number | No (default: 3000) |
-| `NODE_ENV` | Environment mode | No (default: development) |
 | `OPENAI_API_KEY` | OpenAI API key for LLM | Yes |
 | `MONGODB_URI` | MongoDB connection string | Yes |
 
