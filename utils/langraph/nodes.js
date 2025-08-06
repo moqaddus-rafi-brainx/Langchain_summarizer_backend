@@ -1,4 +1,3 @@
-
 import { loadFile } from "../loader.js";
 import { summarizeDocuments } from "../llm.js";
 import { saveSummaryTool } from "../saveSummary.js";
@@ -14,14 +13,24 @@ export const State = Annotation.Root({
 //first node to get the  and generate summary.
 async function loadAndGenerateSummary(state) {
     try {
-        if (!state.file) {
+        // Check if this is a regeneration (decision exists and is "regenerate")
+        const isRegeneration = state.decision === "regenerate";
+        
+        if (!state.file && !isRegeneration) {
             throw new Error("No file provided in state");
         }
+        
         const documents = await loadFile(state.file);
         const summary = await summarizeDocuments(documents);
+        
         const result = {
             llm_output: summary.text,
         };
+        
+        //clearing decision if regenerate.
+        if (isRegeneration) {
+            result.decision = undefined;
+        }
         return result;
 
     } catch (error) {
@@ -37,12 +46,15 @@ async function humanApproval(state) {
     const decision = await interrupt({
         "llm_output": state["llm_output"]
     });    
+    
     if (decision === APPROVAL_DECISIONS.APPROVE) {
         return new Command({goto:"approved_path", update:{decision: "approved"}});
     }
-    else
-    {
+    else if (decision === APPROVAL_DECISIONS.REJECT) {
         return new Command({goto:"rejected_path", update:{decision: "rejected"}});
+    }
+    else if (decision === APPROVAL_DECISIONS.REGENERATE) {
+        return new Command({goto:"generate_llm_output", update:{decision: "regenerate"}});
     }
 }
 

@@ -54,19 +54,34 @@ export const humanApproval = async (req, res) => {
     if (!config) {
       return res.status(400).json({ error: "Invalid threadId" });
     }
-    const commandValue = decision === APPROVAL_DECISIONS.APPROVE ? APPROVAL_DECISIONS.APPROVE : APPROVAL_DECISIONS.REJECT;
-    //again invoke with resume command.
-    //command value will be used my humanApproval node to route to appropriate path.
+    
+    const commandValue = decision === APPROVAL_DECISIONS.APPROVE ? APPROVAL_DECISIONS.APPROVE : 
+                        decision === APPROVAL_DECISIONS.REJECT ? APPROVAL_DECISIONS.REJECT :
+                        APPROVAL_DECISIONS.REGENERATE;
+    
     const finalResult = await graph.invoke(
-     new Command({resume:commandValue}),
+      new Command({resume: commandValue}),
       config
     );
 
-    res.json({ 
-      success: true,
-      result: finalResult,
-      message: decision === APPROVAL_DECISIONS.APPROVE ? 'Summary approved and saved' : 'Summary rejected'
-    });
+    //if regenerate, send back the new summary for approval again.
+    if (finalResult.__interrupt__ && finalResult.__interrupt__.length > 0) {
+      res.json({
+        threadId,
+        summary: finalResult.llm_output,
+        needsApproval: true,
+        message: 'Summary regenerated, waiting for human approval'
+      });
+    } else {
+      //else its either saved in db or rejected.
+      res.json({ 
+        success: true,
+        result: finalResult,
+        message: decision === APPROVAL_DECISIONS.APPROVE ? 'Summary approved and saved' : 
+                decision === APPROVAL_DECISIONS.REJECT ? 'Summary rejected' :
+                'Summary regenerated and approved'
+      });
+    }
     
   } catch (error) {
     console.error("❌ Error in humanApproval:", error);

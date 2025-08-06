@@ -1,6 +1,7 @@
 export const APPROVAL_DECISIONS = {
   APPROVE: "approve",
-  REJECT: "reject"
+  REJECT: "reject",
+  REGENERATE: "regenerate"
 };
 
 export default APPROVAL_DECISIONS; 
