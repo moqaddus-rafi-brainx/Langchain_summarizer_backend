@@ -20,13 +20,11 @@ export const saveSummaryTool = new DynamicStructuredTool({
       const summaryDoc = new Summary({
         text: summary
       });
-      
       await summaryDoc.save();
-      
       return {
         success: true,
         summaryId: summaryDoc._id.toString(),
-        message: `Summary successfully saved to database with ID: ${summaryDoc._id}`
+        message: `Summary successfully saved to database`
       };
     } catch (error) {
       console.error('❌ Error saving summary to database:', error);

@@ -1,7 +1,8 @@
 
-import graph from "../langraph/graph.js";
+import graph from "../utils/langraph/graph.js";
 import { v4 as uuidv4 } from "uuid";
 import { Command } from "@langchain/langgraph";
+import { APPROVAL_DECISIONS } from "../constants.js";
 
 const threadStore = {}; // Or use Redis
 
@@ -48,13 +49,12 @@ export const generateSummary = async (req, res) => {
 //after interrupt occured.
 export const humanApproval = async (req, res) => {
   try {
-
     const { threadId, decision } = req.body;
     const config = threadStore[threadId];
     if (!config) {
       return res.status(400).json({ error: "Invalid threadId" });
     }
-    const commandValue = decision==='approve' ? "approve" : "reject";
+    const commandValue = decision === APPROVAL_DECISIONS.APPROVE ? APPROVAL_DECISIONS.APPROVE : APPROVAL_DECISIONS.REJECT;
     //again invoke with resume command.
     //command value will be used my humanApproval node to route to appropriate path.
     const finalResult = await graph.invoke(
@@ -65,7 +65,7 @@ export const humanApproval = async (req, res) => {
     res.json({ 
       success: true,
       result: finalResult,
-      message: decision==='approve' ? 'Summary approved and saved' : 'Summary rejected'
+      message: decision === APPROVAL_DECISIONS.APPROVE ? 'Summary approved and saved' : 'Summary rejected'
     });
     
   } catch (error) {

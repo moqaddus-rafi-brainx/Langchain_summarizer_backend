@@ -1,11 +1,9 @@
 
-import { ChatOpenAI } from "@langchain/openai";
-import { loadFile } from "../utils/loader.js";
-import { summarizeDocuments } from "../utils/llm.js";
-import { interrupt } from "@langchain/langgraph";
-import { saveSummaryTool } from "../utils/saveSummary.js";
-import { Annotation } from "@langchain/langgraph";
-import { Command } from "@langchain/langgraph";
+import { loadFile } from "../loader.js";
+import { summarizeDocuments } from "../llm.js";
+import { saveSummaryTool } from "../saveSummary.js";
+import { Annotation, Command, interrupt } from "@langchain/langgraph";
+import { APPROVAL_DECISIONS } from "../../constants.js";
 
 export const State = Annotation.Root({
   llm_output: Annotation(),
@@ -19,16 +17,13 @@ async function loadAndGenerateSummary(state) {
         if (!state.file) {
             throw new Error("No file provided in state");
         }
-
         const documents = await loadFile(state.file);
         const summary = await summarizeDocuments(documents);
-        
         const result = {
             llm_output: summary.text,
         };
-        
         return result;
-        
+
     } catch (error) {
         console.error("❌ Error in loadAndGenerateSummary:", error);
         throw error;
@@ -37,13 +32,12 @@ async function loadAndGenerateSummary(state) {
 
 //second node to get the human approval (includes interrupt).
 async function humanApproval(state) {
-    // Get the decision from the interrupt
+    
+    //Get the decision from the interrupt
     const decision = await interrupt({
         "llm_output": state["llm_output"]
-    });
-
-    // Return Command to route to appropriate path
-    if (decision === "approve") {
+    });    
+    if (decision === APPROVAL_DECISIONS.APPROVE) {
         return new Command({goto:"approved_path", update:{decision: "approved"}});
     }
     else
@@ -58,7 +52,6 @@ async function saveSummary(state) {
         const saveResult = await saveSummaryTool.invoke({
             summary: state["llm_output"],
         });
-
         return {
             success: true,
             message: "✅ Summary successfully saved to database",
